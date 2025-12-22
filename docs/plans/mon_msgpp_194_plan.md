@@ -5,17 +5,18 @@
 - **ID**: 0x06
 - **Payload Length**: 120 bytes (fixed)
 - **Description**: Message Parse and Process Status
+- **Supported**: All u-blox generations (8/M8, F9, M10) - deprecated but still available
 
 ### Fields
-| Offset | Name    | Type      | Description                                    |
-|--------|---------|-----------|------------------------------------------------|
-| 0      | msg1    | [u16; 8]  | Message counts for port 1 (8 protocol types)   |
-| 16     | msg2    | [u16; 8]  | Message counts for port 2                      |
-| 32     | msg3    | [u16; 8]  | Message counts for port 3                      |
-| 48     | msg4    | [u16; 8]  | Message counts for port 4                      |
-| 64     | msg5    | [u16; 8]  | Message counts for port 5                      |
-| 80     | msg6    | [u16; 8]  | Message counts for port 6                      |
-| 96     | skipped | [u32; 6]  | Skipped bytes per port                         |
+| Offset | Name    | Type      | Description                                      |
+|--------|---------|-----------|--------------------------------------------------|
+| 0      | msg1    | U2[8]     | Successfully parsed messages per protocol, port0 |
+| 16     | msg2    | U2[8]     | Successfully parsed messages per protocol, port1 |
+| 32     | msg3    | U2[8]     | Successfully parsed messages per protocol, port2 |
+| 48     | msg4    | U2[8]     | Successfully parsed messages per protocol, port3 |
+| 64     | msg5    | U2[8]     | Successfully parsed messages per protocol, port4 |
+| 80     | msg6    | U2[8]     | Successfully parsed messages per protocol, port5 |
+| 96     | skipped | U4[6]     | Number of skipped bytes for each port            |
 
 Protocol indices: 0=UBX, 1=NMEA, 2=RTCM2, 3=RTCM3, 4-7=reserved
 
@@ -28,19 +29,25 @@ Protocol indices: 0=UBX, 1=NMEA, 2=RTCM2, 3=RTCM3, 4-7=reserved
 #[ubx_packet_recv]
 #[ubx(class = 0x0a, id = 0x06, fixed_payload_len = 120)]
 struct MonMsgpp {
-    /// Message counts for port 1 (per protocol)
-    msg1: [u16; 8],
-    msg2: [u16; 8],
-    msg3: [u16; 8],
-    msg4: [u16; 8],
-    msg5: [u16; 8],
-    msg6: [u16; 8],
-    /// Skipped bytes per port
-    skipped: [u32; 6],
+    /// Successfully parsed messages per protocol, port0 (8 x U2 = 16 bytes)
+    msg1: [u8; 16],
+    /// Successfully parsed messages per protocol, port1
+    msg2: [u8; 16],
+    /// Successfully parsed messages per protocol, port2
+    msg3: [u8; 16],
+    /// Successfully parsed messages per protocol, port3
+    msg4: [u8; 16],
+    /// Successfully parsed messages per protocol, port4
+    msg5: [u8; 16],
+    /// Successfully parsed messages per protocol, port5
+    msg6: [u8; 16],
+    /// Number of skipped bytes for each port (6 x U4 = 24 bytes)
+    skipped: [u8; 24],
 }
 ```
 
-Add helper methods to access counts by port/protocol.
+Note: The macro only supports `[u8; N]` arrays, so accessor methods are needed
+to read u16/u32 values from the raw bytes.
 
 ### 2. Register in Protocol Versions
 Add to `packetref_proto27.rs` and `packetref_proto31.rs`.
