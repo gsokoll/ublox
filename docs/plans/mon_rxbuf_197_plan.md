@@ -5,13 +5,17 @@
 - **ID**: 0x07
 - **Payload Length**: 24 bytes (fixed)
 - **Description**: Receiver Buffer Status
+- **Supported**:
+  - u-blox 8/M8: protocol versions 15-23.01
+  - u-blox F9: protocol version 27.x (deprecated, use MON-COMMS instead)
+  - u-blox M10: protocol version 34.x (SPG 5.x firmware)
 
 ### Fields
 | Offset | Name      | Type     | Description                              |
 |--------|-----------|----------|------------------------------------------|
-| 0      | pending   | [u16; 6] | Bytes pending per target (6 targets)     |
-| 12     | usage     | [u8; 6]  | RX buffer usage % per target             |
-| 18     | peakUsage | [u8; 6]  | Peak RX buffer usage % per target        |
+| 0      | pending   | U2[6]    | Number of bytes pending in receiver buffer for each target |
+| 12     | usage     | U1[6]    | Maximum usage receiver buffer during last sysmon period (%) |
+| 18     | peakUsage | U1[6]    | Maximum usage receiver buffer for each target (%) |
 
 ## Implementation Steps
 
@@ -22,17 +26,23 @@
 #[ubx_packet_recv]
 #[ubx(class = 0x0a, id = 0x07, fixed_payload_len = 24)]
 struct MonRxbuf {
-    /// Bytes pending per target
-    pending: [u16; 6],
-    /// RX buffer usage percentage per target
+    /// Number of bytes pending in receiver buffer for each target (6 x U2 = 12 bytes)
+    pending: [u8; 12],
+    /// Maximum usage receiver buffer during last sysmon period for each target (%)
     usage: [u8; 6],
-    /// Peak RX buffer usage percentage per target
+    /// Maximum usage receiver buffer for each target (%)
     peak_usage: [u8; 6],
 }
 ```
 
+Note: `pending` uses `[u8; 12]` since the macro requires byte arrays. Accessor methods needed for u16 values.
+
 ### 2. Register in Protocol Versions
-Add to `packetref_proto27.rs` and `packetref_proto31.rs`.
+Add to all protocol versions:
+- `packetref_proto14.rs` (M8)
+- `packetref_proto23.rs` (M8)
+- `packetref_proto27.rs` (F9)
+- `packetref_proto31.rs` (F9/M10)
 
 ### 3. Create Fuzz Test
 **File**: `ublox/tests/fuzz_mon_rxbuf.rs`
