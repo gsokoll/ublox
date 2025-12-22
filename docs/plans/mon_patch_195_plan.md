@@ -3,22 +3,32 @@
 ## Message Specification
 - **Class**: 0x0A (MON)
 - **ID**: 0x27
-- **Payload Length**: Variable (4 + N*16 bytes)
+- **Payload Length**: Variable (4 + nEntries*16 bytes)
 - **Description**: Installed Patches Information
+- **Supported**: 
+  - u-blox 8/M8: protocol versions 15-23.01
+  - u-blox F9 (ZED-F9P): protocol version 27.x (HPG 1.x firmware)
+  - u-blox M10: protocol version 34.x (SPG 5.x firmware)
 
 ### Header Fields
-| Offset | Name       | Type   | Description                    |
-|--------|------------|--------|--------------------------------|
-| 0      | version    | u16    | Message version                |
-| 2      | nEntries   | u16    | Number of patch entries        |
+| Offset | Name     | Type | Description                           |
+|--------|----------|------|---------------------------------------|
+| 0      | version  | U2   | Message version (0x0001 for this ver) |
+| 2      | nEntries | U2   | Total number of reported patches      |
 
-### Per-Entry Fields (16 bytes each)
-| Offset | Name       | Type | Description                      |
-|--------|------------|------|----------------------------------|
-| 0      | patchInfo  | u32  | Patch info flags                 |
-| 4      | comparatorNumber | u32 | Comparator ID               |
-| 8      | patchAddress | u32 | Address of patch location       |
-| 12     | patchData  | u32  | Patch data (first word)          |
+### Per-Entry Fields (16 bytes each, repeated nEntries times)
+| Offset   | Name             | Type | Description                            |
+|----------|------------------|------|----------------------------------------|
+| 4+n*16   | patchInfo        | X4   | Status info about the reported patch   |
+| 8+n*16   | comparatorNumber | U4   | The number of the comparator           |
+| 12+n*16  | patchAddress     | U4   | Address targeted by the patch          |
+| 16+n*16  | patchData        | U4   | Data inserted at the patchAddress      |
+
+### patchInfo Bitfield
+| Bits  | Name      | Description                                        |
+|-------|-----------|---------------------------------------------------|
+| 0     | activated | 1: patch is active, 0: otherwise                  |
+| 2..1  | location  | Where patch is stored: 0=OTP, 1=ROM, 2=BBR, 3=FS  |
 
 ## Implementation Steps
 
@@ -41,7 +51,11 @@ struct MonPatch {
 Define `MonPatchEntry` struct and `PatchInfo` bitflags for patch info field.
 
 ### 2. Register in Protocol Versions
-Add to `packetref_proto27.rs` and `packetref_proto31.rs`.
+Add to all protocol versions:
+- `packetref_proto14.rs` (M8)
+- `packetref_proto23.rs` (M8)
+- `packetref_proto27.rs` (F9)
+- `packetref_proto31.rs` (F9/M10)
 
 ### 3. Create Fuzz Test
 **File**: `ublox/tests/fuzz_mon_patch.rs`
