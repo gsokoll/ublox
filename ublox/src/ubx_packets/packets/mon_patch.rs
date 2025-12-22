@@ -77,14 +77,14 @@ pub struct MonPatchEntry {
 
 /// Iterator for MON-PATCH entry blocks
 #[derive(Debug, Clone)]
-pub struct MonPatchEntryIter<'a> {
-    data: &'a [u8],
+pub struct MonPatchEntryIter<'d> {
+    data: &'d [u8],
     offset: usize,
 }
 
-impl<'a> MonPatchEntryIter<'a> {
+impl<'d> MonPatchEntryIter<'d> {
     /// Construct iterator from raw patch entry payload bytes.
-    fn new(data: &'a [u8]) -> Self {
+    fn new(data: &'d [u8]) -> Self {
         Self { data, offset: 0 }
     }
 

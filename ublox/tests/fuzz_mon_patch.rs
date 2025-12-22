@@ -7,6 +7,11 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use proptest::prelude::*;
 use ublox::{ParserBuilder, UbxPacket};
 
+/// UBX Sync Character 1 (0xB5 = 'µ')
+const SYNC_CHAR_1: u8 = 0xB5;
+/// UBX Sync Character 2 (0x62 = 'b')
+const SYNC_CHAR_2: u8 = 0x62;
+
 /// Represents a single patch entry (16 bytes).
 #[derive(Debug, Clone)]
 pub struct PatchEntry {
@@ -107,8 +112,8 @@ pub fn ubx_mon_patch_frame_strategy() -> impl Strategy<Value = (MonPatch, Vec<u8
         let (ck_a, ck_b) = calculate_checksum(&frame_core);
 
         let mut final_frame = Vec::with_capacity(8 + payload.len());
-        final_frame.push(0xB5);
-        final_frame.push(0x62);
+        final_frame.push(SYNC_CHAR_1);
+        final_frame.push(SYNC_CHAR_2);
         final_frame.extend_from_slice(&frame_core);
         final_frame.push(ck_a);
         final_frame.push(ck_b);
