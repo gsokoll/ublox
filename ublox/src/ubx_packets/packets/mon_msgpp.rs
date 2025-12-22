@@ -41,7 +41,7 @@ struct MonMsgpp {
     skipped: [u8; 24],
 }
 
-impl<'a> MonMsgppRef<'a> {
+impl<'d> MonMsgppRef<'d> {
     /// Get message counts for a specific port (0-5) and protocol (0-7).
     /// Protocol indices: 0=UBX, 1=NMEA, 2=RTCM2, 3=RTCM3, 4-7=reserved
     pub fn msg_count(&self, port: usize, protocol: usize) -> Option<u16> {
