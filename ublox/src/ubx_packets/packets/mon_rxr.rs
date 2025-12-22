@@ -24,7 +24,7 @@ struct MonRxr {
     flags: u8,
 }
 
-impl<'a> MonRxrRef<'a> {
+impl<'d> MonRxrRef<'d> {
     /// Returns true if the receiver is awake (not in backup mode).
     pub fn is_awake(&self) -> bool {
         (self.flags() & 0x01) != 0
