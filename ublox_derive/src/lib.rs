@@ -136,6 +136,11 @@ fn generate_code_for_recv_packet(
     let mut code = output::generate_types_for_packet(dbg_ctx, &pack_desc);
     let recv_code = output::gen_recv_code::generate_recv_code_for_packet(dbg_ctx, &pack_desc);
     code.extend(recv_code);
+
+    // Generate fuzz strategy code (gated by #[cfg(any(test, feature = "fuzz"))])
+    let fuzz_code = output::gen_fuzz_code::generate_fuzz_code_for_packet(&pack_desc);
+    code.extend(fuzz_code);
+
     Ok(code)
 }
 

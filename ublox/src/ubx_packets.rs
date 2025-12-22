@@ -1,4 +1,8 @@
 pub mod cfg_val;
+#[cfg(any(test, feature = "fuzz"))]
+pub mod fuzz_helpers;
+#[cfg(any(test, feature = "fuzz"))]
+pub mod fuzz_traits;
 pub mod packets;
 mod types;
 

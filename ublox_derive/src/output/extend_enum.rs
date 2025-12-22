@@ -95,6 +95,22 @@ pub(crate) fn generate_code_to_extend_enum(ubx_enum: &UbxExtendEnum) -> TokenStr
         enum_variants.push(quote! { #id = #val });
     }
 
+    // Generate UbxEnumFuzzable impl for fuzz testing
+    // Only include the explicitly defined variants, not reserved ones
+    let fuzz_impl = {
+        let explicit_values: Vec<_> = ubx_enum.variants.iter().map(|(_, val)| *val).collect();
+        quote! {
+            #[cfg(any(test, feature = "fuzz"))]
+            impl crate::ubx_packets::fuzz_traits::UbxEnumFuzzable for #name {
+                type Raw = #repr_ty;
+                
+                fn valid_raw_values() -> &'static [Self::Raw] {
+                    &[#(#explicit_values),*]
+                }
+            }
+        }
+    };
+
     let code = quote! {
         #(#attrs)*
         pub enum #name {
@@ -103,6 +119,8 @@ pub(crate) fn generate_code_to_extend_enum(ubx_enum: &UbxExtendEnum) -> TokenStr
 
         #from_code
         #to_code
+
+        #fuzz_impl
 
         #[cfg(feature = "serde")]
         impl serde::Serialize for #name {

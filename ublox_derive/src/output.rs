@@ -8,6 +8,7 @@ use syn::Ident;
 
 pub(crate) mod extend_enum;
 pub(crate) mod gen_code_for_parse;
+pub(crate) mod gen_fuzz_code;
 pub(crate) mod gen_recv_code;
 pub(crate) mod gen_send_code;
 mod match_packet;
