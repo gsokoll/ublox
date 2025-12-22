@@ -7,6 +7,11 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use proptest::prelude::*;
 use ublox::{ParserBuilder, UbxPacket};
 
+/// UBX Sync Character 1 (0xB5 = 'µ')
+const SYNC_CHAR_1: u8 = 0xB5;
+/// UBX Sync Character 2 (0x62 = 'b')
+const SYNC_CHAR_2: u8 = 0x62;
+
 /// Represents the payload of a UBX-MON-TXBUF message.
 #[derive(Debug, Clone)]
 pub struct MonTxbuf {

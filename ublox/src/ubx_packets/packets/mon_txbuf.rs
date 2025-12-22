@@ -44,7 +44,7 @@ struct MonTxbuf {
     reserved0: u8,
 }
 
-impl<'a> MonTxbufRef<'a> {
+impl<'d> MonTxbufRef<'d> {
     /// Get the number of bytes pending in transmitter buffer for a specific target (0-5).
     pub fn pending_bytes(&self, target: usize) -> Option<u16> {
         if target > 5 {
