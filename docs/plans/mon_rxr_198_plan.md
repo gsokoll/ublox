@@ -4,12 +4,23 @@
 - **Class**: 0x0A (MON)
 - **ID**: 0x21
 - **Payload Length**: 1 byte (fixed)
-- **Description**: Receiver Status Information - sent when receiver wakes from backup mode
+- **Description**: Receiver Status Information - sent when receiver changes from or to backup mode
+- **Supported**:
+  - u-blox 6: yes
+  - u-blox 7: yes
+  - u-blox 8/M8: protocol versions 15-23.01
+  - u-blox F9: protocol version 27.x
+  - u-blox M10: protocol version 34.x (SPG 5.x firmware)
 
 ### Fields
 | Offset | Name   | Type | Description                                      |
 |--------|--------|------|--------------------------------------------------|
-| 0      | flags  | u8   | Receiver status flags (bit 0: awake flag)        |
+| 0      | flags  | X1   | Receiver status flags                            |
+
+### flags Bitfield
+| Bit | Name  | Description                |
+|-----|-------|----------------------------|
+| 0   | awake | not in backup mode         |
 
 ## Implementation Steps
 
@@ -30,11 +41,11 @@ struct MonRxr {
 Define `RxrFlags` enum/bitflags for the flags field with helper methods.
 
 ### 2. Register in Protocol Versions
-Add `MonRxr` to the appropriate `packetref_proto*.rs` files:
-- Proto27: `packetref_proto27.rs`
-- Proto31: `packetref_proto31.rs`
-
-(Check u-blox docs for which protocol versions support this message)
+Add to all protocol versions:
+- `packetref_proto14.rs` (M8)
+- `packetref_proto23.rs` (M8)
+- `packetref_proto27.rs` (F9)
+- `packetref_proto31.rs` (F9/M10)
 
 ### 3. Create Fuzz Test
 **File**: `ublox/tests/fuzz_mon_rxr.rs`
