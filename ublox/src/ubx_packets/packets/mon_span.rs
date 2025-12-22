@@ -78,14 +78,14 @@ impl MonSpanBlock {
 
 /// Iterator for MON-SPAN RF blocks
 #[derive(Debug, Clone)]
-pub struct MonSpanBlockIter<'a> {
-    data: &'a [u8],
+pub struct MonSpanBlockIter<'d> {
+    data: &'d [u8],
     offset: usize,
 }
 
-impl<'a> MonSpanBlockIter<'a> {
+impl<'d> MonSpanBlockIter<'d> {
     /// Construct iterator from raw RF block payload bytes.
-    fn new(data: &'a [u8]) -> Self {
+    fn new(data: &'d [u8]) -> Self {
         Self { data, offset: 0 }
     }
 
