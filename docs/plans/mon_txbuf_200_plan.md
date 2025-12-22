@@ -5,17 +5,29 @@
 - **ID**: 0x08
 - **Payload Length**: 28 bytes (fixed)
 - **Description**: Transmitter Buffer Status
+- **Supported**:
+  - u-blox 8/M8: protocol versions 15-23.01
+  - u-blox F9: protocol version 27.x (deprecated, use MON-COMMS instead)
+  - u-blox M10: protocol version 34.x (SPG 5.x firmware)
+  - u-blox F10: protocol version 40.x
 
 ### Fields
 | Offset | Name      | Type     | Description                              |
 |--------|-----------|----------|------------------------------------------|
-| 0      | pending   | [u16; 6] | Bytes pending per target (6 targets)     |
-| 12     | tUsage    | [u8; 6]  | TX buffer usage % per target             |
-| 18     | tPeakUsage| [u8; 6]  | Peak TX buffer usage % per target        |
-| 24     | errors    | u8       | Error flags                              |
-| 25     | reserved1 | u8       | Reserved                                 |
-| 26     | limit     | u8       | Max usage configuration                  |
-| 27     | reserved2 | u8       | Reserved                                 |
+| 0      | pending   | U2[6]    | Number of bytes pending in transmitter buffer for each target |
+| 12     | usage     | U1[6]    | Maximum usage transmitter buffer during last sysmon period (%) |
+| 18     | peakUsage | U1[6]    | Maximum usage transmitter buffer for each target (%) |
+| 24     | tUsage    | U1       | Maximum usage of transmitter buffer for all targets (%) |
+| 25     | tPeakUsage| U1       | Maximum usage of transmitter buffer for all targets (%) |
+| 26     | errors    | X1       | Error bitmask |
+| 27     | reserved0 | U1       | Reserved |
+
+### errors Bitfield
+| Bits | Name  | Description |
+|------|-------|-------------|
+| 5..0 | limit | Buffer limit of corresponding target reached |
+| 6    | mem   | Memory Allocation error |
+| 7    | alloc | Allocation error (TX buffer full) |
 
 ## Implementation Steps
 
@@ -45,7 +57,11 @@ struct MonTxbuf {
 Define `TxbufErrors` bitflags for error field.
 
 ### 2. Register in Protocol Versions
-Add to `packetref_proto27.rs` and `packetref_proto31.rs`.
+Add to all protocol versions:
+- `packetref_proto14.rs` (M8)
+- `packetref_proto23.rs` (M8)
+- `packetref_proto27.rs` (F9)
+- `packetref_proto31.rs` (F9/M10)
 
 ### 3. Create Fuzz Test
 **File**: `ublox/tests/fuzz_mon_txbuf.rs`
