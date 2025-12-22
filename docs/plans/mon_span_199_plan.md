@@ -4,7 +4,12 @@
 - **Class**: 0x0A (MON)
 - **ID**: 0x31
 - **Payload Length**: Variable (4 + N*34 bytes)
-- **Description**: Signal/Spectrum Data - RF spectrum analyzer output
+- **Description**: Signal Characteristics - RF spectrum analyzer for each RF path
+- **Supported**:
+  - u-blox F9: protocol version 27.x (HPG 1.x, LAP 1.x firmware)
+  - u-blox M10: protocol version 34.x (SPG 5.x firmware)
+  - u-blox F10: protocol version 40.x (SPG 6.x firmware)
+  - NOT supported on u-blox 8/M8
 
 ### Header Fields
 | Offset | Name      | Type | Description                     |
@@ -47,7 +52,9 @@ struct MonSpan {
 Define `MonSpanBlock` struct and iterator for spectrum blocks.
 
 ### 2. Register in Protocol Versions
-Add to `packetref_proto27.rs` and `packetref_proto31.rs`.
+Add to F9/M10 protocol versions only (not M8):
+- `packetref_proto27.rs` (F9)
+- `packetref_proto31.rs` (F9/M10)
 
 ### 3. Create Fuzz Test
 **File**: `ublox/tests/fuzz_mon_span.rs`
