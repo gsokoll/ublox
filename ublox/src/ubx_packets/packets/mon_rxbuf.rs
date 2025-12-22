@@ -29,7 +29,7 @@ struct MonRxbuf {
     peak_usage: [u8; 6],
 }
 
-impl<'a> MonRxbufRef<'a> {
+impl<'d> MonRxbufRef<'d> {
     /// Get the number of bytes pending in receiver buffer for a specific target (0-5).
     pub fn pending_bytes(&self, target: usize) -> Option<u16> {
         if target > 5 {
