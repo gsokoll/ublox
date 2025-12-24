@@ -75,28 +75,34 @@ struct NavPl {
     /// GPS time of week (ms)
     itow: u32,
 
-    /// First axis of position protection level value (mm),
+    /// First axis of position protection level value (m),
     /// given in coordinate frame of plPosFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_pos1: u32,
 
-    /// Second axis of position protection level value (mm),
+    /// Second axis of position protection level value (m),
     /// given in coordinate frame of plPosFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_pos2: u32,
 
-    /// Third axis of position protection level value (mm),
+    /// Third axis of position protection level value (m),
     /// given in coordinate frame of plPosFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_pos3: u32,
 
-    /// First axis of velocity protection level value (mm/s),
+    /// First axis of velocity protection level value (m/s),
     /// given in coordinate frame of plVelFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_vel1: u32,
 
-    /// Second axis of velocity protection level value (mm/s),
+    /// Second axis of velocity protection level value (m/s),
     /// given in coordinate frame of plVelFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_vel2: u32,
 
-    /// Third axis of velocity protection level value (mm/s),
+    /// Third axis of velocity protection level value (m/s),
     /// given in coordinate frame of plVelFrame
+    #[ubx(map_type = f64, scale = 0.001)]
     pl_vel3: u32,
 
     /// Orientation of HorizSemiMajorAxis of horizontal ellipse position

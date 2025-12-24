@@ -247,14 +247,15 @@ proptest! {
 
         // Timing and position fields
         prop_assert_eq!(p.itow(), expected.itow);
-        prop_assert_eq!(p.pl_pos1(), expected.pl_pos1);
-        prop_assert_eq!(p.pl_pos2(), expected.pl_pos2);
-        prop_assert_eq!(p.pl_pos3(), expected.pl_pos3);
+        // Position PLs now return f64 in meters (scaled by 0.001 from mm)
+        prop_assert!((p.pl_pos1() - (expected.pl_pos1 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_pos2() - (expected.pl_pos2 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_pos3() - (expected.pl_pos3 as f64 * 0.001)).abs() < 1e-9);
 
-        // Velocity fields
-        prop_assert_eq!(p.pl_vel1(), expected.pl_vel1);
-        prop_assert_eq!(p.pl_vel2(), expected.pl_vel2);
-        prop_assert_eq!(p.pl_vel3(), expected.pl_vel3);
+        // Velocity PLs now return f64 in m/s (scaled by 0.001 from mm/s)
+        prop_assert!((p.pl_vel1() - (expected.pl_vel1 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_vel2() - (expected.pl_vel2 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_vel3() - (expected.pl_vel3 as f64 * 0.001)).abs() < 1e-9);
 
         // Orientation and time fields
         prop_assert_eq!(p.pl_pos_horiz_orient_raw(), expected.pl_pos_horiz_orient);
@@ -295,14 +296,15 @@ proptest! {
 
         // Timing and position fields
         prop_assert_eq!(p.itow(), expected.itow);
-        prop_assert_eq!(p.pl_pos1(), expected.pl_pos1);
-        prop_assert_eq!(p.pl_pos2(), expected.pl_pos2);
-        prop_assert_eq!(p.pl_pos3(), expected.pl_pos3);
+        // Position PLs now return f64 in meters (scaled by 0.001 from mm)
+        prop_assert!((p.pl_pos1() - (expected.pl_pos1 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_pos2() - (expected.pl_pos2 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_pos3() - (expected.pl_pos3 as f64 * 0.001)).abs() < 1e-9);
 
-        // Velocity fields
-        prop_assert_eq!(p.pl_vel1(), expected.pl_vel1);
-        prop_assert_eq!(p.pl_vel2(), expected.pl_vel2);
-        prop_assert_eq!(p.pl_vel3(), expected.pl_vel3);
+        // Velocity PLs now return f64 in m/s (scaled by 0.001 from mm/s)
+        prop_assert!((p.pl_vel1() - (expected.pl_vel1 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_vel2() - (expected.pl_vel2 as f64 * 0.001)).abs() < 1e-9);
+        prop_assert!((p.pl_vel3() - (expected.pl_vel3 as f64 * 0.001)).abs() < 1e-9);
 
         // Orientation and time fields
         prop_assert_eq!(p.pl_pos_horiz_orient_raw(), expected.pl_pos_horiz_orient);
