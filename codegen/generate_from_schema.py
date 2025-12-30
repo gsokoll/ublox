@@ -320,7 +320,7 @@ def generate_fuzz_test(msg: dict) -> list[str]:
     lines.append(f"        (expected, frame) in {module_name}_frame_strategy()")
     lines.append("    ) {")
     lines.append("        // Parse the generated frame")
-    lines.append("        let mut parser = ParserBuilder::default().build();")
+    lines.append("        let mut parser = ParserBuilder::new().with_vec_buffer();")
     lines.append("        let mut it = parser.consume_ubx(&frame);")
     lines.append("")
     lines.append("        match it.next() {")
