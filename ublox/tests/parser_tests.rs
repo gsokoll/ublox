@@ -757,6 +757,7 @@ fn test_util_esf_meas_assert_expected_json(pack: UbxPacket) {
                 panic!();
             }
         },
+        UbxPacket::Proto40(_) => unreachable!("Does not support ESF MEAS"),
     }
 }
 

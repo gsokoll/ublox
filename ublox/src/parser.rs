@@ -50,6 +50,17 @@ pub type DefaultProtocol = crate::proto31::Proto31;
 /// The default protocol for types that are generic over protocols, the type of the [DefaultProtocol] depends on which protocol feature(s) are enabled
 pub type DefaultProtocol = crate::proto33::Proto33;
 
+#[cfg(all(
+    not(feature = "ubx_proto14"),
+    not(feature = "ubx_proto23"),
+    not(feature = "ubx_proto27"),
+    not(feature = "ubx_proto31"),
+    not(feature = "ubx_proto33"),
+    feature = "ubx_proto40"
+))]
+/// The default protocol for types that are generic over protocols, the type of the [DefaultProtocol] depends on which protocol feature(s) are enabled
+pub type DefaultProtocol = crate::proto40::Proto40;
+
 mod buffer;
 use buffer::DualBuffer;
 pub use buffer::{FixedBuffer, FixedLinearBuffer, UnderlyingBuffer};

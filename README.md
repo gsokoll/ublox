@@ -133,6 +133,18 @@ Enable `std` support.
 
 This library supports no_std environments with a deterministic-size `Parser`. See the documentation for more information.
 
+Each `ubx_protoNN` feature corresponds to a u-blox protocol version reported
+in UBX-MON-VER:
+
+- `ubx_proto23` — u-blox 8 / M8 series
+- `ubx_proto27` — u-blox 9 standard (F9P SPG, M9 SPG)
+- `ubx_proto31` — u-blox 9 advanced (F9R HPS)
+- `ubx_proto33` — u-blox 9 latest (M10 SPG)
+- `ubx_proto40` — u-blox F10-generation (NEO-F10N/T)
+
+A future `ubx_proto50` feature will cover X20-generation (ZED-X20P/D) once
+proto50-specific message types are added.
+
 ### `ubx_proto14`
 
 Enable support for uBlox protocol 14 messages (legacy messages).
@@ -152,6 +164,10 @@ Enable support for uBlox protocol 31 messages.
 ### `ubx_proto33`
 
 Enable support for uBlox protocol 33 messages.
+
+### `ubx_proto40`
+
+Enable support for uBlox protocol 40 messages (F10-generation, e.g. NEO-F10N/T).
 
 # Minimum Supported Rust Version
 
