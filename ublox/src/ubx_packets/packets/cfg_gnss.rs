@@ -103,6 +103,10 @@ pub enum GnssId {
     IMES = 4,
     QZSS = 5,
     GLONASS = 6,
+    /// NavIC (a.k.a. IRNSS). Constellation ID 8 per u-blox F10 SPG 6.00
+    /// and X20 HPG 2.02 Interface Descriptions. ID 7 is intentionally
+    /// unassigned in the UBX gnssId enumeration.
+    NAVIC = 8,
 }
 
 impl TryFrom<u8> for GnssId {
@@ -117,7 +121,8 @@ impl TryFrom<u8> for GnssId {
             4 => Ok(GnssId::IMES),
             5 => Ok(GnssId::QZSS),
             6 => Ok(GnssId::GLONASS),
-            _ => Err("Invalid GnssId value: value must be in range [0, 6]"),
+            8 => Ok(GnssId::NAVIC),
+            _ => Err("Invalid GnssId value: must be in [0, 6] or 8 (NavIC); 7 is unassigned"),
         }
     }
 }
@@ -135,6 +140,7 @@ pub enum SigCfgMask {
     Sbas(SbasSigMask),
     Qzss(QzssSigMask),
     Imes(ImesSigMask),
+    Navic(NavicSigMask),
     Unknown(u8),
 }
 
@@ -174,6 +180,12 @@ impl From<ImesSigMask> for SigCfgMask {
     }
 }
 
+impl From<NavicSigMask> for SigCfgMask {
+    fn from(m: NavicSigMask) -> Self {
+        SigCfgMask::Navic(m)
+    }
+}
+
 impl SigCfgMask {
     #[inline]
     pub fn raw_bits(self) -> u8 {
@@ -185,6 +197,7 @@ impl SigCfgMask {
             SigCfgMask::Sbas(m) => m.bits(),
             SigCfgMask::Qzss(m) => m.bits(),
             SigCfgMask::Imes(m) => m.bits(),
+            SigCfgMask::Navic(m) => m.bits(),
             SigCfgMask::Unknown(b) => b,
         }
     }
@@ -263,6 +276,27 @@ bitflags! {
     }
 }
 
+/// NavIC signal mask carried in the legacy UBX-CFG-GNSS `sigCfgMask`
+/// byte when `gnssId == 8`.
+///
+/// Bit positions are not enumerated for NavIC in the F9 HPG 1.32,
+/// F10 SPG 6.00, or X20 HPG 2.02 Interface Descriptions — the legacy
+/// CFG-GNSS message predates NavIC support, and modern firmware
+/// configures NavIC via UBX-CFG-VALSET keys (see
+/// [`crate::ubx_packets::CfgVal::SignalNavicEna`] and
+/// [`crate::ubx_packets::CfgVal::SignalNavicL5Ena`]). The struct is
+/// kept empty so that raw mask bits are preserved by
+/// `from_bits_truncate` and exposed via [`SigCfgMask::raw_bits`].
+/// TODO: populate concrete bit constants if u-blox publishes a NavIC
+/// `sigCfgMask` layout for the legacy CFG-GNSS message.
+#[ubx_extend_bitflags]
+#[ubx(from, into_raw, rest_reserved)]
+bitflags! {
+    #[derive(Clone, Copy, Debug)]
+    pub struct NavicSigMask: u8 {
+    }
+}
+
 #[derive(Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct GnssConfigBlock {
@@ -337,6 +371,7 @@ impl GnssConfigBlock {
             GnssId::QZSS => SigCfgMask::Qzss(QzssSigMask::from_bits_truncate(m)),
             GnssId::SBAS => SigCfgMask::Sbas(SbasSigMask::from_bits_truncate(m)),
             GnssId::IMES => SigCfgMask::Unknown(m),
+            GnssId::NAVIC => SigCfgMask::Navic(NavicSigMask::from_bits_truncate(m)),
         }
     }
 
@@ -513,5 +548,42 @@ mod tests {
         assert_eq!(parsed[1].gnss_id, GnssId::GALILEO);
         assert_eq!(parsed[0].gnss_id as u8, blocks[0].gnss_id as u8);
         assert_eq!(parsed[1].gnss_id as u8, blocks[1].gnss_id as u8);
+    }
+
+    #[test]
+    fn gnss_id_try_from_navic() {
+        assert_eq!(GnssId::try_from(8u8), Ok(GnssId::NAVIC));
+        assert_eq!(GnssId::NAVIC as u8, 8);
+    }
+
+    #[test]
+    fn gnss_id_try_from_unassigned_seven_is_err() {
+        // ID 7 is intentionally unassigned in the UBX gnssId enumeration.
+        assert!(GnssId::try_from(7u8).is_err());
+    }
+
+    #[test]
+    fn gnss_id_try_from_out_of_range_is_err() {
+        assert!(GnssId::try_from(9u8).is_err());
+        assert!(GnssId::try_from(255u8).is_err());
+    }
+
+    #[test]
+    #[cfg(not(feature = "ubx_proto14"))]
+    fn navic_sig_cfg_mask_dispatch() {
+        // sigCfgMask is bits 23..16 of flags
+        let raw_mask: u8 = 0x11;
+        let block = GnssConfigBlock {
+            gnss_id: GnssId::NAVIC,
+            res_trk_ch: 0,
+            max_trk_ch: 0,
+            reserved1: 0,
+            flags: ((raw_mask as u32) << 16) | 0x01,
+        };
+        assert_eq!(block.raw_sig_mask(), raw_mask);
+        match block.sig_cfg_mask() {
+            SigCfgMask::Navic(m) => assert_eq!(m.bits(), raw_mask),
+            other => panic!("expected SigCfgMask::Navic, got {other:?}"),
+        }
     }
 }

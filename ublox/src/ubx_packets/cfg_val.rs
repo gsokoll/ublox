@@ -1435,6 +1435,12 @@ cfg_val! {
   SignalGloEna,          0x10310025, bool,
   SignalGloL1Ena,        0x10310018, bool,
   SignalGLoL2Ena,        0x1031001a, bool,
+  /// CFG-SIGNAL-NAVIC_ENA — enable the NavIC constellation. Verified
+  /// per u-blox X20 HPG 2.02 Interface Description §6.9.22.
+  SignalNavicEna,        0x10310026, bool,
+  /// CFG-SIGNAL-NAVIC_L5_ENA — enable the NavIC L5 signal. Verified
+  /// per u-blox X20 HPG 2.02 Interface Description §6.9.22.
+  SignalNavicL5Ena,      0x1031001d, bool,
 
   /// "Undocumented" L5 Health Bit Ignore (see
   /// <https://content.u-blox.com/sites/default/files/documents/GPS-L5-configuration_AppNote_UBX-21038688.pdf>)
@@ -1748,4 +1754,56 @@ pub enum TModePosType {
     ECEF = 0,
     /// Lat/Lon/Height position
     LLH = 1,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn signal_navic_keys_map_to_correct_id() {
+        assert_eq!(CfgKey::SignalNavicEna as u32, 0x10310026);
+        assert_eq!(CfgKey::SignalNavicL5Ena as u32, 0x1031001d);
+    }
+
+    /// CFG-VALSET wire format for a bool: 4-byte little-endian key ID
+    /// followed by a single 0/1 value byte.
+    #[test]
+    fn signal_navic_ena_byte_layout() {
+        let val = CfgVal::SignalNavicEna(true);
+        let mut buf = [0u8; 5];
+        let written = val.write_to(&mut buf);
+        assert_eq!(written, 5);
+        // 0x10310026 little-endian = 26 00 31 10
+        assert_eq!(&buf[..4], &[0x26, 0x00, 0x31, 0x10]);
+        assert_eq!(buf[4], 1);
+    }
+
+    #[test]
+    fn signal_navic_l5_ena_byte_layout() {
+        let val = CfgVal::SignalNavicL5Ena(true);
+        let mut buf = [0u8; 5];
+        let written = val.write_to(&mut buf);
+        assert_eq!(written, 5);
+        // 0x1031001d little-endian = 1d 00 31 10
+        assert_eq!(&buf[..4], &[0x1d, 0x00, 0x31, 0x10]);
+        assert_eq!(buf[4], 1);
+    }
+
+    #[test]
+    fn signal_navic_ena_roundtrip_parse() {
+        let val = CfgVal::SignalNavicEna(true);
+        let mut buf = [0u8; 5];
+        val.write_to(&mut buf);
+        let parsed = CfgVal::parse(&buf).expect("parse must succeed");
+        assert_eq!(parsed, CfgVal::SignalNavicEna(true));
+    }
+
+    #[test]
+    fn signal_navic_l5_ena_value_false_encodes_zero() {
+        let val = CfgVal::SignalNavicL5Ena(false);
+        let mut buf = [0u8; 5];
+        val.write_to(&mut buf);
+        assert_eq!(buf[4], 0);
+    }
 }
