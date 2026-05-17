@@ -1423,15 +1423,25 @@ cfg_val! {
   SignalGpsEna,          0x1031001f, bool,
   SignalGpsL1caEna,      0x10310001, bool,
   SignalGpsL2cEna,       0x10310003, bool,
+  /// CFG-SIGNAL-GPS_L5_ENA — verified per u-blox X20 HPG 2.02 §6.9.22.
+  SignalGpsL5Ena,        0x10310004, bool,
   SignalGalEna,          0x10310021, bool,
   SignalGalE1Ena,        0x10310007, bool,
   SignalGalE5bEna,       0x1031000a, bool,
+  /// CFG-SIGNAL-GAL_E5A_ENA — verified per u-blox X20 HPG 2.02 §6.9.22.
+  SignalGalE5aEna,       0x10310009, bool,
   SignalBdsEna,          0x10310022, bool,
   SignalBdsB1Ena,        0x1031000d, bool,
   SignalBdsB2Ena,        0x1031000e, bool,
+  /// CFG-SIGNAL-BDS_B1C_ENA — verified per u-blox X20 HPG 2.02 §6.9.22.
+  SignalBdsB1cEna,       0x1031000f, bool,
+  /// CFG-SIGNAL-BDS_B2A_ENA — verified per u-blox X20 HPG 2.02 §6.9.22.
+  SignalBdsB2aEna,       0x10310028, bool,
   SignalQzssEna,         0x10310024, bool,
   SignalQzssL1caEna,     0x10310012, bool,
   SignalQzssL2cEna,      0x10310015, bool,
+  /// CFG-SIGNAL-QZSS_L5_ENA — verified per u-blox X20 HPG 2.02 §6.9.22.
+  SignalQzssL5Ena,       0x10310017, bool,
   SignalGloEna,          0x10310025, bool,
   SignalGloL1Ena,        0x10310018, bool,
   SignalGLoL2Ena,        0x1031001a, bool,
@@ -1748,4 +1758,79 @@ pub enum TModePosType {
     ECEF = 0,
     /// Lat/Lon/Height position
     LLH = 1,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Helper: encode a `CfgVal` via `extend_to` and return the resulting bytes.
+    fn encode(val: CfgVal) -> Vec<u8> {
+        let mut buf: Vec<u8> = Vec::new();
+        let written = val.extend_to(&mut buf);
+        assert_eq!(written, buf.len(), "extend_to length mismatch");
+        buf
+    }
+
+    /// Helper: assert the encoding of a bool-valued CFG key matches the expected
+    /// little-endian key ID followed by a single value byte.
+    fn assert_bool_key(val: CfgVal, key_id: u32, value_byte: u8) {
+        let bytes = encode(val);
+        assert_eq!(bytes.len(), 5, "bool CFG key+value must encode to 5 bytes");
+        assert_eq!(
+            &bytes[..4],
+            &key_id.to_le_bytes()[..],
+            "key ID little-endian mismatch"
+        );
+        assert_eq!(bytes[4], value_byte, "value byte mismatch");
+
+        // Round-trip via parse().
+        let parsed = CfgVal::parse(&bytes).expect("parse should succeed");
+        assert_eq!(parsed.key() as u32, key_id, "round-tripped key mismatch");
+    }
+
+    #[test]
+    fn signal_gps_l5_ena_encodes_correctly() {
+        assert_bool_key(CfgVal::SignalGpsL5Ena(true), 0x10310004, 1);
+        assert_bool_key(CfgVal::SignalGpsL5Ena(false), 0x10310004, 0);
+    }
+
+    #[test]
+    fn signal_gal_e5a_ena_encodes_correctly() {
+        assert_bool_key(CfgVal::SignalGalE5aEna(true), 0x10310009, 1);
+    }
+
+    #[test]
+    fn signal_bds_b1c_ena_encodes_correctly() {
+        assert_bool_key(CfgVal::SignalBdsB1cEna(true), 0x1031000f, 1);
+    }
+
+    #[test]
+    fn signal_bds_b2a_ena_encodes_correctly() {
+        assert_bool_key(CfgVal::SignalBdsB2aEna(true), 0x10310028, 1);
+    }
+
+    #[test]
+    fn signal_qzss_l5_ena_encodes_correctly() {
+        assert_bool_key(CfgVal::SignalQzssL5Ena(true), 0x10310017, 1);
+    }
+
+    #[test]
+    fn signal_l5_keys_write_to_slice_matches_extend_to() {
+        // Verify the slice-based `write_to` agrees with the iterator-based `extend_to`.
+        let cases = [
+            CfgVal::SignalGpsL5Ena(true),
+            CfgVal::SignalGalE5aEna(true),
+            CfgVal::SignalBdsB1cEna(true),
+            CfgVal::SignalBdsB2aEna(true),
+            CfgVal::SignalQzssL5Ena(true),
+        ];
+        for case in cases {
+            let extended = encode(case);
+            let mut slice_buf = [0u8; 16];
+            let n = case.write_to(&mut slice_buf);
+            assert_eq!(n, extended.len());
+            assert_eq!(&slice_buf[..n], &extended[..]);
+        }
+    }
 }
