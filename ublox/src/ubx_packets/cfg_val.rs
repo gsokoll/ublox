@@ -351,7 +351,8 @@ macro_rules! into_cfg_kv_bytes {
 macro_rules! cfg_val {
   (
     $(
-      $(#[$class_comment:meta])*
+      $(#[doc = $cfg_doc:expr])*
+      $(#[cfg($cfg_cfg:meta)])?
       $cfg_item:ident, $cfg_key_id:expr, $cfg_value_type:ident,
     )*
   ) => {
@@ -360,7 +361,8 @@ macro_rules! cfg_val {
     pub enum CfgKey {
       WildcardAll = 0x7fffffff,
       $(
-        $(#[$class_comment])*
+        $(#[doc = $cfg_doc])*
+        $(#[cfg($cfg_cfg)])?
         $cfg_item = $cfg_key_id,
       )*
     }
@@ -370,7 +372,8 @@ macro_rules! cfg_val {
     #[non_exhaustive]
     pub enum CfgVal {
       $(
-        $(#[$class_comment])*
+        $(#[doc = $cfg_doc])*
+        $(#[cfg($cfg_cfg)])?
         $cfg_item($cfg_value_type),
       )*
     }
@@ -379,6 +382,7 @@ macro_rules! cfg_val {
       pub const fn len(&self) -> usize {
         match self {
           $(
+            $(#[cfg($cfg_cfg)])?
             Self::$cfg_item(_) => {
               $cfg_item::SIZE
             }
@@ -395,6 +399,7 @@ macro_rules! cfg_val {
       pub const fn key(&self) -> CfgKey {
         match self {
           $(
+            $(#[cfg($cfg_cfg)])?
             Self::$cfg_item(_) => CfgKey::$cfg_item,
           )*
         }
@@ -405,6 +410,7 @@ macro_rules! cfg_val {
         let key_id = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]);
         match key_id {
           $(
+            $(#[cfg($cfg_cfg)])?
             $cfg_key_id => {
               Some(Self::$cfg_item(from_cfg_v_bytes!(&buf[4..], $cfg_value_type)))
             },
@@ -423,6 +429,7 @@ macro_rules! cfg_val {
       {
         match self {
           $(
+            $(#[cfg($cfg_cfg)])?
             Self::$cfg_item(value) => {
               let bytes = $cfg_item(*value).into_cfg_kv_bytes();
               let bytes_len = bytes.len();
@@ -436,6 +443,7 @@ macro_rules! cfg_val {
       pub fn write_to(&self, buf: &mut [u8]) -> usize {
         match self {
           $(
+            $(#[cfg($cfg_cfg)])?
             Self::$cfg_item(value) => {
               let kv: [u8; $cfg_item::SIZE] = $cfg_item(*value).into_cfg_kv_bytes();
               buf[..kv.len()].copy_from_slice(&kv[..]);
@@ -447,8 +455,10 @@ macro_rules! cfg_val {
     }
 
     $(
+      $(#[cfg($cfg_cfg)])?
       struct $cfg_item(pub $cfg_value_type);
 
+      $(#[cfg($cfg_cfg)])?
       impl $cfg_item {
         const KEY: KeyId = KeyId($cfg_key_id);
         const SIZE: usize = KeyId::SIZE + Self::KEY.value_size().to_usize();
@@ -1426,9 +1436,15 @@ cfg_val! {
   SignalGalEna,          0x10310021, bool,
   SignalGalE1Ena,        0x10310007, bool,
   SignalGalE5bEna,       0x1031000a, bool,
+  /// Galileo E6 enable (X20 HPG 2.02 ICD §6.9.22)
+  #[cfg(feature = "ubx_proto50")]
+  SignalGalE6Ena,        0x1031000b, bool,
   SignalBdsEna,          0x10310022, bool,
   SignalBdsB1Ena,        0x1031000d, bool,
   SignalBdsB2Ena,        0x1031000e, bool,
+  /// BeiDou B3I enable (X20 HPG 2.02 ICD §6.9.22)
+  #[cfg(feature = "ubx_proto50")]
+  SignalBdsB3Ena,        0x10310010, bool,
   SignalQzssEna,         0x10310024, bool,
   SignalQzssL1caEna,     0x10310012, bool,
   SignalQzssL2cEna,      0x10310015, bool,
@@ -1748,4 +1764,71 @@ pub enum TModePosType {
     ECEF = 0,
     /// Lat/Lon/Height position
     LLH = 1,
+}
+
+#[cfg(test)]
+#[cfg(feature = "ubx_proto50")]
+mod l6_tests {
+    //! Tests for L6-band CFG-SIGNAL keys added for X20-generation receivers.
+    //! Gated on `ubx_proto50` so the variants under test actually exist.
+
+    use super::{CfgKey, CfgVal};
+
+    /// Construct, `write_to` a fixed buffer, and assert the encoded
+    /// little-endian key ID and value byte match the ICD.
+    fn assert_encodes(val: CfgVal, expected_key_id: u32, expected_value: u8) {
+        // 4-byte key ID + 1-byte bool value
+        let mut buf = [0u8; 5];
+        let written = val.write_to(&mut buf);
+        assert_eq!(written, 5, "expected 5 bytes for a bool CFG-VAL");
+        let key_le = expected_key_id.to_le_bytes();
+        assert_eq!(&buf[0..4], &key_le, "key ID bytes (LE) mismatch");
+        assert_eq!(buf[4], expected_value, "value byte mismatch");
+    }
+
+    #[test]
+    fn signal_gal_e6_ena_true() {
+        let v = CfgVal::SignalGalE6Ena(true);
+        assert_eq!(v.key(), CfgKey::SignalGalE6Ena);
+        assert_eq!(v.len(), 5);
+        assert_encodes(v, 0x1031000b, 0x01);
+    }
+
+    #[test]
+    fn signal_gal_e6_ena_false() {
+        assert_encodes(CfgVal::SignalGalE6Ena(false), 0x1031000b, 0x00);
+    }
+
+    #[test]
+    fn signal_bds_b3_ena_true() {
+        let v = CfgVal::SignalBdsB3Ena(true);
+        assert_eq!(v.key(), CfgKey::SignalBdsB3Ena);
+        assert_eq!(v.len(), 5);
+        assert_encodes(v, 0x10310010, 0x01);
+    }
+
+    #[test]
+    fn signal_bds_b3_ena_false() {
+        assert_encodes(CfgVal::SignalBdsB3Ena(false), 0x10310010, 0x00);
+    }
+
+    #[test]
+    fn signal_gal_e6_ena_round_trip_parse() {
+        let mut buf = [0u8; 5];
+        CfgVal::SignalGalE6Ena(true).write_to(&mut buf);
+        match CfgVal::parse(&buf) {
+            Some(CfgVal::SignalGalE6Ena(true)) => {},
+            other => panic!("round-trip failed: got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn signal_bds_b3_ena_round_trip_parse() {
+        let mut buf = [0u8; 5];
+        CfgVal::SignalBdsB3Ena(false).write_to(&mut buf);
+        match CfgVal::parse(&buf) {
+            Some(CfgVal::SignalBdsB3Ena(false)) => {},
+            other => panic!("round-trip failed: got {other:?}"),
+        }
+    }
 }

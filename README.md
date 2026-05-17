@@ -141,9 +141,7 @@ in UBX-MON-VER:
 - `ubx_proto31` — u-blox 9 advanced (F9R HPS)
 - `ubx_proto33` — u-blox 9 latest (M10 SPG)
 - `ubx_proto40` — u-blox F10-generation (NEO-F10N/T)
-
-A future `ubx_proto50` feature will cover X20-generation (ZED-X20P/D) once
-proto50-specific message types are added.
+- `ubx_proto50` — u-blox X20-generation (ZED-X20P/D); implies `ubx_proto40`
 
 ### `ubx_proto14`
 
@@ -168,6 +166,11 @@ Enable support for uBlox protocol 33 messages.
 ### `ubx_proto40`
 
 Enable support for uBlox protocol 40 messages (F10-generation, e.g. NEO-F10N/T).
+
+### `ubx_proto50`
+
+Enable support for uBlox protocol 50 messages (X20-generation, e.g. ZED-X20P/D).
+Implies `ubx_proto40`, since proto50 is a superset of proto40.
 
 # Minimum Supported Rust Version
 
